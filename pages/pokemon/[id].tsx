@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Button, Card, Container, Grid, Image, Text } from '@nextui-org/react';
+import { Button, Card, Container, Grid, Image, Text, useTheme } from '@nextui-org/react';
 import { GetStaticProps, NextPage, GetStaticPaths } from 'next';
 
 import Layouts from 'davsua/components/layouts/Layouts';
@@ -8,12 +8,16 @@ import { Pokemon } from 'davsua/interfaces';
 import { localFavorites, getPokemonInfo } from 'davsua/utils';
 
 import confetti from 'canvas-confetti';
+import { TextColor } from 'davsua/components/pokemon/TextColor';
 
 interface Props {
   pokemon: Pokemon;
 }
 
 const PokemonPage: NextPage<Props> = ({ pokemon }) => {
+  //console.log(pokemon.types[0].type);
+  const { theme } = useTheme();
+
   const [isInFav, setIsInFav] = useState(false);
 
   // lo debo setear aqui y no directamente en el useState evitando el error de hidratacion
@@ -44,7 +48,11 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
     <Layouts title={pokemon.name}>
       <Grid.Container css={{ marginTop: '5px' }} gap={2}>
         <Grid xs={12} sm={4}>
-          <Card>
+          <Card
+            style={{
+              backgroundColor: theme?.colors.gray300.value
+            }}
+          >
             <Card.Body>
               <Card.Image
                 src={pokemon.sprites.other?.dream_world.front_default || '/no-image.png'}
@@ -56,11 +64,16 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
           </Card>
         </Grid>
         <Grid xs={12} sm={8}>
-          <Card>
+          <Card
+            style={{
+              backgroundColor: theme?.colors.gray300.value
+            }}
+          >
             <Card.Header css={{ display: 'flex', justifyContent: 'space-between' }}>
               <Text h1 transform="capitalize">
                 {pokemon.name}
               </Text>
+              {/*<Text>{pokemon.type}</Text>*/}
 
               {/* onPress === onClick en nextUI*/}
               <Button color="gradient" ghost={!isInFav} onPress={onToggleFavorites}>
@@ -97,6 +110,17 @@ const PokemonPage: NextPage<Props> = ({ pokemon }) => {
                   height={100}
                 />
               </Container>
+              <Text h2>Type: </Text>
+              <Text
+                h3
+                color={TextColor(pokemon.type[0].type.name)}
+                css={{
+                  paddingLeft: '10px'
+                }}
+                transform="capitalize"
+              >
+                {pokemon.type[0].type.name}
+              </Text>
             </Card.Body>
           </Card>
         </Grid>
@@ -114,17 +138,30 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
     paths: pokemons151.map((id) => ({
       params: { id }
     })),
-    fallback: false
+    //fallback: false
+    fallback: 'blocking' // permite encontrar la peticion asi no se haya pasado inicialmente (ej: pokemon 152)
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { id } = params as { id: string };
 
+  const pokemon = await getPokemonInfo(id);
+
+  if (!pokemon) {
+    return {
+      redirect: {
+        destination: '/', // a donde redigira
+        permanent: false // en este caso false por que es posible que se sigan creando pokemones
+      }
+    };
+  }
+
   return {
     props: {
-      pokemon: await getPokemonInfo(id)
-    }
+      pokemon
+    },
+    revalidate: 86400 // dato en segundos (revalidacion de la data (pagina))
   };
 };
 

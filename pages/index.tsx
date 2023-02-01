@@ -1,19 +1,19 @@
 import Layouts from '../components/layouts/Layouts';
 import { NextPage, GetStaticProps } from 'next';
 import { pokeApi } from '../api';
-import { PokemonResponse, SmallPokemon } from '../interfaces';
+import { PokemonResponse, SmallPokemon, Pokemon } from '../interfaces';
 import { Grid } from '@nextui-org/react';
 import { PokemonCard } from 'davsua/components/pokemon/PokemonCard';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { getPokemonInfo } from 'davsua/utils';
 
 interface Props {
   pokemons: SmallPokemon[];
+  types: Pokemon;
 }
 
-// funcion para obtener todos los pokemon y asignar id e img al final
-
 const HomePage: NextPage<Props> = ({ pokemons }) => {
-  //console.log(pokemons);
-
   return (
     <Layouts title="Listado de pokemons">
       <Grid.Container gap={2} justify="flex-start">
@@ -28,7 +28,7 @@ const HomePage: NextPage<Props> = ({ pokemons }) => {
 // SE EJECUTA UNICAMENTE DEL LADO DEL SERVIDOR
 export const getStaticProps: GetStaticProps = async (ctx) => {
   const { data } = await pokeApi.get<PokemonResponse>('/pokemon?limit=151');
-  //console.log(data);
+  //console.log(data.results);
   const pokemons: SmallPokemon[] = data.results.map((pokemon, i) => ({
     ...pokemon,
     id: i + 1,
@@ -36,8 +36,6 @@ export const getStaticProps: GetStaticProps = async (ctx) => {
       i + 1
     }.svg`
   }));
-
-  // console.log(pokemons)
 
   return {
     props: {

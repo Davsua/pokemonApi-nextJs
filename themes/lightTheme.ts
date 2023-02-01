@@ -1,8 +1,11 @@
-import { createTheme } from "@nextui-org/react"
+import { createTheme } from '@nextui-org/react';
 
 export const lightTheme = createTheme({
-    type: 'light',
-    theme: {
-      colors: {}, // optional
-    }
-  })
+  type: 'light',
+  theme: {
+    colors: {
+      myColor: '#4eff5a'
+    },
+    fonts: {}
+  }
+});

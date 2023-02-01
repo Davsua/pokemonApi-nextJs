@@ -1,20 +1,26 @@
 import { useEffect, useState } from 'react';
 
-import { Button, Card, Container, Grid, Image, Text } from '@nextui-org/react';
+import { Button, Card, Container, Grid, Image, Text, useTheme } from '@nextui-org/react';
 import { GetStaticProps, NextPage, GetStaticPaths } from 'next';
 
 import { pokeApi } from 'davsua/api';
 import Layouts from 'davsua/components/layouts/Layouts';
-import { Pokemon, PokemonResponse } from 'davsua/interfaces';
+import { Pokemon, PokemonResponse, Type } from 'davsua/interfaces';
 import { localFavorites, getPokemonInfo } from 'davsua/utils';
+import { TextColor } from 'davsua/components/pokemon/TextColor';
 
 import confetti from 'canvas-confetti';
 
 interface Props {
   pokemon: Pokemon;
+  type: Type;
 }
 
-const PokemonName: NextPage<Props> = ({ pokemon }) => {
+const PokemonName: NextPage<Props> = ({ pokemon, type }) => {
+  //console.log(pokemon.type[0].type.name);
+
+  const { theme } = useTheme();
+
   const [isInFav, setIsInFav] = useState(false);
 
   // lo debo setear aqui y no directamente en el useState evitando el error de hidratacion
@@ -45,7 +51,14 @@ const PokemonName: NextPage<Props> = ({ pokemon }) => {
     <Layouts title={pokemon.name}>
       <Grid.Container css={{ marginTop: '5px' }} gap={2}>
         <Grid xs={12} sm={4}>
-          <Card>
+          <Card
+            style={{
+              backgroundColor: theme?.colors.gray300.value,
+              borderStyle: 'outset',
+              borderColor: theme?.colors.gray500.value,
+              borderWidth: '3px'
+            }}
+          >
             <Card.Body>
               <Card.Image
                 src={pokemon.sprites.other?.dream_world.front_default || '/no-image.png'}
@@ -57,7 +70,14 @@ const PokemonName: NextPage<Props> = ({ pokemon }) => {
           </Card>
         </Grid>
         <Grid xs={12} sm={8}>
-          <Card>
+          <Card
+            style={{
+              backgroundColor: theme?.colors.gray300.value,
+              borderStyle: 'outset',
+              borderColor: theme?.colors.gray500.value,
+              borderWidth: '3px'
+            }}
+          >
             <Card.Header css={{ display: 'flex', justifyContent: 'space-between' }}>
               <Text h1 transform="capitalize">
                 {pokemon.name}
@@ -70,7 +90,7 @@ const PokemonName: NextPage<Props> = ({ pokemon }) => {
             </Card.Header>
 
             <Card.Body>
-              <Text size={30}>Sprites:</Text>
+              <Text h2>Sprites:</Text>
 
               <Container display="flex" direction="row" gap={0}>
                 <Image
@@ -98,6 +118,17 @@ const PokemonName: NextPage<Props> = ({ pokemon }) => {
                   height={100}
                 />
               </Container>
+              <Text h2>Type: </Text>
+              <Text
+                h3
+                color={TextColor(pokemon.type[0].type.name)}
+                css={{
+                  paddingLeft: '10px'
+                }}
+                transform="capitalize"
+              >
+                {pokemon.type[0].type.name}
+              </Text>
             </Card.Body>
           </Card>
         </Grid>
@@ -119,7 +150,8 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
       params: { name }
     })),
 
-    fallback: false
+    //fallback: false
+    fallback: 'blocking'
   };
 };
 
@@ -127,10 +159,22 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   // lo que recibo
   const { name } = params as { name: string };
 
+  const pokemon = await getPokemonInfo(name);
+
+  if (!pokemon) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      }
+    };
+  }
+
   return {
     props: {
-      pokemon: await getPokemonInfo(name)
-    }
+      pokemon
+    },
+    revalidate: 86400 // dato en segundos (revalidacion de la data (pagina))
   };
 };
 
